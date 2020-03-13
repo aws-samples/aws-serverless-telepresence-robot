@@ -3,11 +3,11 @@
     <h1>{{ msg }}</h1>
     <div id="video-container">
       <div id="video-controls">
-        <button type="button" id="open-stream" v-on:click="openStream" v-bind:disabled="isStreamActive">Open Video</button>
-        <button type="button" id="stop-stream" v-on:click="stopStream">Stop Video</button>
+        <button type="button" id="open-stream" v-on:click="openStream" v-if="!isStreamActive">Open Video</button>
+        <button type="button" id="stop-stream" v-on:click="stopStream" v-if="isStreamActive">Stop Video</button>
         <button type="button" id="rotate" v-on:click="rotateVideo">Rotate</button>
       </div>
-      <video class="remote-view" id="myVideoEl" autoplay playsinline  />
+      <video class="remote-view" id="myVideoEl" v-bind:hidden="!isStreamActive" autoplay playsinline  />
     </div>
   </div>
 </template>
@@ -168,7 +168,7 @@ export default {
   },
   data() {
     return {
-      isStreamActive: false,
+      isStreamActive: false
     }
   },
   methods: {

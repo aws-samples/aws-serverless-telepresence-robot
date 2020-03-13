@@ -13,6 +13,8 @@
 # .nfs files are created when an open file is removed but is still being accessed
 .nfs*
 
+samconfig.toml
+
 # Editor directories and files
 .idea
 .vscode
