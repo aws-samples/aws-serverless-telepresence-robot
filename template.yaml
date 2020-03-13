@@ -1,0 +1,198 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  telepresence-robot
+
+Parameters:
+  RobotName:
+    Type: String
+    Default: "sts-pi"
+    Description: (Required) Name your robot.
+
+Globals:
+  Api:
+    Cors:
+      AllowMethods: "'*'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
+
+Resources:
+  SendAction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      Runtime: nodejs12.x
+      CodeUri: src/SendAction/
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - iot:Publish
+                - iot:DescribeEndpoint
+              Resource: '*'
+      Environment:
+        Variables:
+          ROBOT_NAME: !Ref RobotName
+      Events:
+        PostResource:
+          Type: Api
+          Properties:
+            Path: /publish
+            Method: post
+
+  RobotThing:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName: !Ref RobotName
+
+  RobotIoTPolicy:
+      Type: "AWS::IoT::Policy"
+      Properties:
+        PolicyName: !Sub "${RobotName}Policy"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - iot:Connect
+                - iot:Subscribe
+                - iot:Publish
+                - iot:Receive
+              Resource:
+                - !Sub "arn:aws:iot:*:*:topicfilter/${RobotName}/action"
+                - !Sub "arn:aws:iot:*:*:topic/${RobotName}/action"
+                - !Sub "arn:aws:iot:*:*:topic/${RobotName}/telemetry"
+                - !Sub "arn:aws:iot:*:*:client/${RobotName}"
+
+  KVSCertificateBasedIAMRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'credentials.iot.amazonaws.com'
+            Action: 'sts:AssumeRole'
+        Policies:
+        - PolicyName: !Sub "KVSIAMPolicy-${AWS::StackName}"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+                - kinesisvideo:ConnectAsMaster
+                - kinesisvideo:GetSignalingChannelEndpoint
+                - kinesisvideo:CreateSignalingChannel
+                - kinesisvideo:GetIceServerConfig
+                - kinesisvideo:DescribeSignalingChannel
+              Resource: "arn:aws:kinesisvideo:*:*:channel/${credentials-iot:ThingName}/*"
+
+  #Role Alias Custom Resource
+  RoleAliasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: customresources/roleAlias.handler
+      Runtime: nodejs12.x
+      Role: !GetAtt CustomResourceLambdaRole.Arn
+  RoleAliasCustomResource:
+    Type: Custom::RoleAlias
+    Properties:
+      ServiceToken: !GetAtt RoleAliasFunction.Arn
+      RoleAlias: robot-camera-streaming-role-alias
+      RoleArn: !GetAtt KVSCertificateBasedIAMRole.Arn
+
+  #Kinesis Video Stream Custom Resource
+  CreateKinesisVideoStreamLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: customresources/kinesisVideoStream.handler
+      Runtime: nodejs12.x
+      CodeUri: src/
+      Timeout: 5
+      Policies:
+        - AWSLambdaExecute
+        - AmazonKinesisVideoStreamsFullAccess
+        - AmazonKinesisFullAccess
+
+  KinesisVideoStreamSignalingChannel:
+    Type: Custom::KinesisVideoStreamSignalingChannel # Custom resource definition
+    Properties:
+      ServiceToken: !GetAtt CreateKinesisVideoStreamLambda.Arn
+      ChannelName: !Ref RobotName
+
+  #Get Credentials endpoint Custom Resource
+  GetIoTCredentialsEndpoint:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: customresources/credentialsEndpoint.handler
+      Runtime: nodejs12.x
+      CodeUri: src/
+      Timeout: 5
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - iot:DescribeEndpoint
+              Resource: '*'
+
+  IoTCredentialsEndpoint:
+    Type: Custom::IoTCredentialsEndpoint # Custom resource definition
+    Properties:
+      ServiceToken: !GetAtt GetIoTCredentialsEndpoint.Arn
+
+
+  # Lambda Role
+  CustomResourceLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "lambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: !Sub "IoTPolicy-${AWS::StackName}"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iot:DescribeRoleAlias
+                  - iot:CreateRoleAlias
+                  - iot:UpdateRoleAlias
+                Resource: "*"
+        - PolicyName: !Sub "IAMPolicy-${AWS::StackName}"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: !GetAtt KVSCertificateBasedIAMRole.Arn
+
+  CameraIoTPolicy:
+      Type: "AWS::IoT::Policy"
+      Properties:
+        PolicyName: !Sub "AliasPolicy-${AWS::StackName}"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - iot:Connect
+                - iot:AssumeRoleWithCertificate
+              Resource: !GetAtt RoleAliasCustomResource.roleAliasArn
+
+Outputs:
+  EndpointUrl:
+    Description: "The IoT Credentials Provider Endpoint"
+    Value: !GetAtt IoTCredentialsEndpoint.endpoint
+  ApiURL:
+    Description: "API endpoint URL for Prod environment"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
