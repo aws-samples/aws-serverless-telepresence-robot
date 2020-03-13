@@ -1,6 +1,6 @@
 # telepresence-robot
 
-![Architectural Diagram]("https://code.amazon.com/packages/Aws-serverless-telepresence-robot/blobs/heads/master/--/diagram.png?raw=1")
+![Architectural Diagram]("https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/diagram.png")
 
 This project contains all the files neccesary to deploy a serverless telepresence robot application using the Pimoroni STS-Pi kit. It will provision all the resources required for permisions and credentials, a kinesis video stream, and also deploy a REST api for driving a robot. A Python script is also included for driving the robot.
 
