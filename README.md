@@ -12,7 +12,7 @@ This project contains all the files neccesary to deploy a serverless telepresenc
 │       └── app.js             <-- Publish messages on an IoT topic
 │  └── customresources
 │       └── credentialsEndpoint.js  <-- Lambda handler for IoT Credentials endpoint custom resource
-│       └── kinesisVideoStream.js   <-- Lambda handler for Kinesis Video Stream custom resource
+│       └── kinesisVideoStream.js   <-- Lambda handler for Kinesis Video Signaling Channel custom resource
 │       └── roleAlias.js            <-- Lambda handler for Role Alias custom resource
 ├── scripts
 │  └── main.py                     <-- Script for driving the robot via AWS IoT messages
