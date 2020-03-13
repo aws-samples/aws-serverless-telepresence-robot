@@ -4,8 +4,11 @@
     <div id="video-container">
       <div id="video-controls">
         <button type="button" id="open-stream" v-on:click="openStream" v-if="!isStreamActive">Open Video</button>
-        <button type="button" id="stop-stream" v-on:click="stopStream" v-if="isStreamActive">Stop Video</button>
-        <button type="button" id="rotate" v-on:click="rotateVideo" v-if="isStreamActive">Rotate</button>
+        <div id="active-video-controls" v-if="isStreamActive">
+          <button type="button" id="stop-stream" v-on:click="stopStream">Stop Video</button>
+          <button type="button" id="rotate" v-on:click="rotateVideo">Rotate</button>
+          <button type="button" id="full-screen" v-on:click="fullscreen">Full Screen</button>
+        </div>
       </div>
       <video class="remote-view" id="myVideoEl" v-bind:hidden="!isStreamActive" autoplay playsinline  />
     </div>
@@ -187,6 +190,16 @@ export default {
     stopStream: function () {
       stopViewer()
       this.isStreamActive = false
+    },
+    fullscreen: function () {
+      const video = document.querySelector('#myVideoEl')
+      if(video.requestFullScreen){
+        video.requestFullScreen();
+      } else if(video.webkitRequestFullScreen){
+        video.webkitRequestFullScreen();
+      } else if(video.mozRequestFullScreen){
+        video.mozRequestFullScreen();
+      }
     }
   }
 }
@@ -200,7 +213,7 @@ h3 {
 video {
   width:50%;
   visibility: visible;
-  background: transparent url('../assets/poster.png') 50% 50% / contain ;
+  background: black;
 }
 button {
   min-width: 80px;
