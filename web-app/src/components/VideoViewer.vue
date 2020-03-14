@@ -9,9 +9,13 @@
           <button type="button" id="rotate" v-on:click="rotateVideo">Rotate</button>
           <button type="button" id="full-screen" v-on:click="fullscreen">Full Screen</button>
         </div>
+        <input type="checkbox" id="logChoice" v-model="showLogs">
+        <label for="logChoice">Logs</label>
       </div>
       <video class="remote-view" id="myVideoEl" v-bind:hidden="!isStreamActive" autoplay playsinline  />
+      <div id="logs" v-show="showLogs" />
     </div>
+
   </div>
 </template>
 
@@ -22,6 +26,12 @@ import { Auth } from 'aws-amplify'
 import { v4 as uuid } from 'uuid'
 import AWS from 'aws-sdk'
 import * as config from '../config.json'
+
+
+function logger(msg) {
+  console.log(msg)
+  document.getElementById('logs').innerHTML += msg + '<br />'
+}
 
 function openStreamViewer() {
   Auth.currentCredentials().then((info) => {
@@ -37,7 +47,7 @@ function openStreamViewer() {
 let viewer = {}
 
 async function startViewer(config) {
-  console.log('Starting Viewer')
+  logger('Starting Viewer')
   let { credentials, channelARN, region, clientId } = config
 
   const kinesisVideoClient = new AWS.KinesisVideo({
@@ -56,6 +66,7 @@ async function startViewer(config) {
       .promise()
 
   const endpointsByProtocol = getSignalingChannelEndpointResponse.ResourceEndpointList.reduce((endpoints, endpoint) => {
+      logger('Get siganling channel endpoint')
       endpoints[endpoint.Protocol] = endpoint.ResourceEndpoint
       return endpoints
   }, {})
@@ -85,7 +96,24 @@ async function startViewer(config) {
       })
   )
 
+  const platform = navigator.platform
+  logger(`Platform: ${platform}`)
+
+  if(platform == 'iPhone') {
+    try {
+        viewer.localStream = await navigator.mediaDevices.getUserMedia(
+          {
+            video: true,
+            audio: true
+          })
+    } catch (e) {
+        logger(`Could not get usermedia ${JSON.stringify(e)}`);
+        return
+    }
+  }
+
   viewer.peerConnection = new RTCPeerConnection({ iceServers })
+  logger('Create peerConnection')
 
   viewer.signalingClient = new SignalingClient({
       channelARN,
@@ -97,6 +125,7 @@ async function startViewer(config) {
   })
 
   viewer.signalingClient.on('open', async () => {
+      logger('Creating SDP offer')
       // Create an SDP offer and send it to the master
       const offer = await viewer.peerConnection.createOffer({
           offerToReceiveAudio: true,
@@ -108,26 +137,27 @@ async function startViewer(config) {
   // When the SDP answer is received back from the master, add it to the peer connection.
   viewer.signalingClient.on('sdpAnswer', async answer => {
       await viewer.peerConnection.setRemoteDescription(answer)
-      console.log('[VIEWER] Signaling client anser: ', answer)
+      logger('Received sdpAnswer')
   })
 
   // When an ICE candidate is received from the master, add it to the peer connection.
   viewer.signalingClient.on('iceCandidate', candidate => {
-      console.log('[VIEWER] Signaling client candidate received: ', candidate)
+      logger('Candidate received from Master')
       viewer.peerConnection.addIceCandidate(candidate)
   })
 
   viewer.signalingClient.on('close', () => {
-      console.log('[VIEWER] Signaling client closed')
+      logger('Signaling Client Closed')
       stopViewer()
   })
 
   viewer.signalingClient.on('error', error => {
-      console.log(error)
+      logger(`ERROR: ${JSON.stringify(error)}`)
   })
 
   viewer.peerConnection.addEventListener('icecandidate', ({ candidate }) => {
       if (candidate) {
+        logger('Received iceCandidate')
         viewer.signalingClient.sendIceCandidate(candidate)
       }
   })
@@ -135,6 +165,8 @@ async function startViewer(config) {
   // As remote tracks are received, add them to the remote view
   viewer.remoteView = document.querySelector('#myVideoEl')
   viewer.remoteView.play()
+  logger('Start playing incoming video')
+
   viewer.peerConnection.addEventListener('track', event => {
       if (viewer.remoteView.srcObject) {
           return
@@ -147,20 +179,24 @@ async function startViewer(config) {
 }
 
 function stopViewer() {
-    console.log('[VIEWER] Stopping viewer connection');
-    if (viewer.signalingClient) {
-        viewer.signalingClient.close();
-        viewer.signalingClient = null;
-    }
+  logger('[VIEWER] Stopping viewer connection')
+  if (viewer.signalingClient) {
+      viewer.signalingClient.close()
+      viewer.signalingClient = null
+  }
 
-    if (viewer.peerConnection) {
-        viewer.peerConnection.close();
-        viewer.peerConnection = null;
-    }
+  if (viewer.peerConnection) {
+      viewer.peerConnection.close()
+      viewer.peerConnection = null
+  }
 
-    if (viewer.remoteView) {
-        viewer.remoteView.srcObject = null;
-    }
+  if (viewer.remoteView) {
+      viewer.remoteView.srcObject = null
+  }
+
+  if (viewer.localStream) {
+    viewer.localStream = null
+  }
 }
 
 
@@ -171,7 +207,8 @@ export default {
   },
   data() {
     return {
-      isStreamActive: false
+      isStreamActive: false,
+      showLogs: false
     }
   },
   methods: {
@@ -209,6 +246,15 @@ export default {
 <style scoped>
 h3 {
   margin: 40px 0 0;
+}
+#logs {
+  max-height: 100px;
+  min-height: 50px;
+  max-width: 370px;
+  overflow: auto;
+  border-style: solid;
+  border-width: thin;
+  margin: auto;
 }
 video {
   width:50%;
