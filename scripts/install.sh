@@ -24,8 +24,14 @@ sudo apt-get -y install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 sudo apt-get -y install gstreamer1.0-plugins-base-apps gstreamer1.0-plugins-bad
 sudo apt-get -y install gstreamer1.0-plugins-good gstreamer1.0-plugins-ugly gstreamer1.0-tools
 sudo apt-get -y install gstreamer1.0-omx
-sudo apt-get -y install python3-explorerhat
 pip3 install AWSIoTPythonSDK
+
+if [ "$MOTOR_DRIVER" == "adafruit" ]
+then
+    sudo pip3 install adafruit-circuitpython-motorkit
+else
+    sudo apt-get -y install python3-explorerhat
+fi
 
 if [ ! -d /home/pi/Projects ]
 then
@@ -65,7 +71,14 @@ fi
 
 cp /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/build/kvsWebrtcClientMasterGstSample /home/pi/Projects/robot/
 curl --silent 'https://www.amazontrust.com/repository/SFSRootCAG2.pem' --output cacert.pem
-curl --silent 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/main.py' --output main.py
+
+if [ "$MOTOR_DRIVER" == "adafruit" ]
+then
+    curl --silent 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/adafruit-motor-hat-main.py' --output main.py
+else
+    curl --silent 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/main.py' --output main.py
+fi
+
 touch certificate.pem
 touch private.pem.key
 

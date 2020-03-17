@@ -205,3 +205,217 @@ Outputs:
     Description: API endpoint URL for Prod environment
     Value:
       Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'telepresence-robot
+
+  '
+Parameters:
+  RobotName:
+    Type: String
+    Default: sts-pi
+    Description: (Required) Name your robot.
+Globals:
+  Api:
+    Cors:
+      AllowMethods: '''*'''
+      AllowHeaders: '''*'''
+      AllowOrigin: '''*'''
+Resources:
+  SendAction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      Runtime: nodejs12.x
+      CodeUri: s3://iot-test-mo/8aff82c87e8e146aceb778d0ceb912db
+      Policies:
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - iot:Publish
+          - iot:DescribeEndpoint
+          Resource: '*'
+      Environment:
+        Variables:
+          ROBOT_NAME:
+            Ref: RobotName
+      Events:
+        PostResource:
+          Type: Api
+          Properties:
+            Path: /publish
+            Method: post
+  RobotThing:
+    Type: AWS::IoT::Thing
+    Properties:
+      ThingName:
+        Ref: RobotName
+  RobotIoTPolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyName:
+        Fn::Sub: ${RobotName}Policy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - iot:Connect
+          - iot:Subscribe
+          - iot:Publish
+          - iot:Receive
+          Resource:
+          - Fn::Sub: arn:aws:iot:*:*:topicfilter/${RobotName}/action
+          - Fn::Sub: arn:aws:iot:*:*:topic/${RobotName}/action
+          - Fn::Sub: arn:aws:iot:*:*:topic/${RobotName}/telemetry
+          - Fn::Sub: arn:aws:iot:*:*:client/${RobotName}
+  KVSCertificateBasedIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: credentials.iot.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName:
+          Fn::Sub: KVSIAMPolicy-${AWS::StackName}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - kinesisvideo:ConnectAsMaster
+            - kinesisvideo:GetSignalingChannelEndpoint
+            - kinesisvideo:CreateSignalingChannel
+            - kinesisvideo:GetIceServerConfig
+            - kinesisvideo:DescribeSignalingChannel
+            Resource: arn:aws:kinesisvideo:*:*:channel/${credentials-iot:ThingName}/*
+  RoleAliasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://iot-test-mo/45b08e8324f795d918677eaef97bcd33
+      Handler: customresources/roleAlias.handler
+      Runtime: nodejs12.x
+      Role:
+        Fn::GetAtt:
+        - CustomResourceLambdaRole
+        - Arn
+  RoleAliasCustomResource:
+    Type: Custom::RoleAlias
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - RoleAliasFunction
+        - Arn
+      RoleAlias: robot-camera-streaming-role-alias
+      RoleArn:
+        Fn::GetAtt:
+        - KVSCertificateBasedIAMRole
+        - Arn
+  CreateKinesisVideoStreamLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: customresources/kinesisVideoStream.handler
+      Runtime: nodejs12.x
+      CodeUri: s3://iot-test-mo/45b08e8324f795d918677eaef97bcd33
+      Timeout: 5
+      Policies:
+      - AWSLambdaExecute
+      - AmazonKinesisVideoStreamsFullAccess
+      - AmazonKinesisFullAccess
+  KinesisVideoStreamSignalingChannel:
+    Type: Custom::KinesisVideoStreamSignalingChannel
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - CreateKinesisVideoStreamLambda
+        - Arn
+      ChannelName:
+        Ref: RobotName
+  GetIoTCredentialsEndpoint:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: customresources/credentialsEndpoint.handler
+      Runtime: nodejs12.x
+      CodeUri: s3://iot-test-mo/45b08e8324f795d918677eaef97bcd33
+      Timeout: 5
+      Policies:
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - iot:DescribeEndpoint
+          Resource: '*'
+  IoTCredentialsEndpoint:
+    Type: Custom::IoTCredentialsEndpoint
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+        - GetIoTCredentialsEndpoint
+        - Arn
+  CustomResourceLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+      - PolicyName:
+          Fn::Sub: IoTPolicy-${AWS::StackName}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - iot:DescribeRoleAlias
+            - iot:CreateRoleAlias
+            - iot:UpdateRoleAlias
+            Resource: '*'
+      - PolicyName:
+          Fn::Sub: IAMPolicy-${AWS::StackName}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - iam:PassRole
+            Resource:
+              Fn::GetAtt:
+              - KVSCertificateBasedIAMRole
+              - Arn
+  CameraIoTPolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyName:
+        Fn::Sub: AliasPolicy-${AWS::StackName}
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - iot:Connect
+          - iot:AssumeRoleWithCertificate
+          Resource:
+            Fn::GetAtt:
+            - RoleAliasCustomResource
+            - roleAliasArn
+Outputs:
+  EndpointUrl:
+    Description: The IoT Credentials Provider Endpoint
+    Value:
+      Fn::GetAtt:
+      - IoTCredentialsEndpoint
+      - endpoint
+  ApiURL:
+    Description: API endpoint URL for Prod environment
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+
