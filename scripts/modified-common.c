@@ -586,9 +586,9 @@ STATUS createSampleConfiguration(PCHAR channelName, SIGNALING_CHANNEL_ROLE_TYPE 
 
     CHK_STATUS(createLwsIotCredentialProvider(
                 pCredentialsEndpoint,  // IoT credentials endpoint
-                "./certificate.pem",  // path to iot certificate
-                "./private.pem.key", // path to iot private key
-                "./cacert.pem", // path to CA cert
+                "./certs/certificate.pem",  // path to iot certificate
+                "./certs/private.pem.key", // path to iot private key
+                "./certs/cacert.pem", // path to CA cert
                 pRoleAlias, // IoT role alias
                 channelName, // iot thing name, recommended to be same as your channel name
                 &pSampleConfiguration->pCredentialProvider));
