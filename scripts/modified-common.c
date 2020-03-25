@@ -630,7 +630,7 @@ STATUS createSampleConfiguration(PCHAR channelName, SIGNALING_CHANNEL_ROLE_TYPE 
 CleanUp:
 
     if (STATUS_FAILED(retStatus)) {
-        freeIotCredentialProvider(&pSampleConfiguration->pCredentialProvider);
+        freeSampleConfiguration(&pSampleConfiguration);
     }
 
     if (ppSampleConfiguration != NULL) {
@@ -677,7 +677,7 @@ STATUS freeSampleConfiguration(PSampleConfiguration* ppSampleConfiguration)
         CVAR_FREE(pSampleConfiguration->cvar);
     }
 
-    freeStaticCredentialProvider(&pSampleConfiguration->pCredentialProvider);
+    freeIotCredentialProvider(&pSampleConfiguration->pCredentialProvider);
 
     MEMFREE(*ppSampleConfiguration);
     *ppSampleConfiguration = NULL;
@@ -695,6 +695,7 @@ STATUS sessionCleanupWait(PSampleConfiguration pSampleConfiguration)
     PSampleStreamingSession pSampleStreamingSession = NULL;
     UINT32 i;
     BOOL locked = FALSE;
+    SIGNALING_CLIENT_STATE signalingClientState;
 
     CHK(pSampleConfiguration != NULL, STATUS_NULL_ARG);
 
@@ -726,17 +727,23 @@ STATUS sessionCleanupWait(PSampleConfiguration pSampleConfiguration)
                   5 * HUNDREDS_OF_NANOS_IN_A_SECOND);
 
         // Check if we need to re-create the signaling client on-the-fly
-        if (ATOMIC_LOAD_BOOL(&pSampleConfiguration->recreateSignalingClient)) {
-            CHK_STATUS(freeSignalingClient(&pSampleConfiguration->signalingClientHandle));
-            CHK_STATUS(createSignalingClientSync(&pSampleConfiguration->clientInfo,
-                                                 &pSampleConfiguration->channelInfo,
-                                                 &pSampleConfiguration->signalingClientCallbacks,
-                                                 pSampleConfiguration->pCredentialProvider,
-                                                 &pSampleConfiguration->signalingClientHandle));
-            CHK_STATUS(signalingClientConnectSync(pSampleConfiguration->signalingClientHandle));
-
+        if (ATOMIC_LOAD_BOOL(&pSampleConfiguration->recreateSignalingClient) &&
+            STATUS_SUCCEEDED(freeSignalingClient(&pSampleConfiguration->signalingClientHandle)) &&
+            STATUS_SUCCEEDED(createSignalingClientSync(&pSampleConfiguration->clientInfo,
+                    &pSampleConfiguration->channelInfo,
+                    &pSampleConfiguration->signalingClientCallbacks,
+                    pSampleConfiguration->pCredentialProvider,
+                    &pSampleConfiguration->signalingClientHandle))) {
             // Re-set the variable again
             ATOMIC_STORE_BOOL(&pSampleConfiguration->recreateSignalingClient, FALSE);
+        }
+
+        // Check the signaling client state and connect if needed
+        if (IS_VALID_SIGNALING_CLIENT_HANDLE(pSampleConfiguration->signalingClientHandle)) {
+            CHK_STATUS(signalingClientGetCurrentState(pSampleConfiguration->signalingClientHandle, &signalingClientState));
+            if (signalingClientState == SIGNALING_CLIENT_STATE_READY) {
+                UNUSED_PARAM(signalingClientConnectSync(pSampleConfiguration->signalingClientHandle));
+            }
         }
     }
 
