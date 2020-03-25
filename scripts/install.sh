@@ -50,7 +50,7 @@ else
   git pull
 fi
 
-git checkout 24e2b680d59fe6f3d9d686881b3bd7a76f1aa40c
+git checkout aa9628d189719e6fe2f709347c5a62d93a3ff98d
 cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/samples
 rm /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/samples/Common.c
 curl --silent 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/modified-common.c' --output Common.c
