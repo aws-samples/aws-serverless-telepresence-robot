@@ -70,7 +70,6 @@ else
 fi
 
 cp /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/build/kvsWebrtcClientMasterGstSample /home/pi/Projects/robot/
-curl --silent 'https://www.amazontrust.com/repository/SFSRootCAG2.pem' --output cacert.pem
 
 if [ "$MOTOR_DRIVER" == "adafruit" ]
 then
@@ -78,9 +77,6 @@ then
 else
     curl --silent 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/main.py' --output main.py
 fi
-
-touch certificate.pem
-touch private.pem.key
 
 cat > config.json <<EOF
 {
@@ -91,3 +87,9 @@ cat > config.json <<EOF
   "AWS_DEFAULT_REGION": ""
 }
 EOF
+
+mkdir /home/pi/Projects/robot/certs
+cd /home/pi/Projects/robot/certs
+curl --silent 'https://www.amazontrust.com/repository/SFSRootCAG2.pem' --output cacert.pem
+touch certificate.pem
+touch private.pem.key

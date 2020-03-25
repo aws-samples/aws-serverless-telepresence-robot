@@ -30,9 +30,9 @@ host = config['IOT_CORE_ENDPOINT']
 clientId = config['IOT_THINGNAME']
 topic = clientId + '/action'
 
-rootCAPath = './cacert.pem'
-certificatePath = './certificate.pem'
-privateKeyPath = './private.pem.key'
+rootCAPath = './certs/cacert.pem'
+certificatePath = './certs/certificate.pem'
+privateKeyPath = './certs/private.pem.key'
 port = 443
 useWebsocket = False
 
