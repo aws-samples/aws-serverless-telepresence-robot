@@ -6,8 +6,6 @@ npm install
 amplify init
 amplify add auth
 amplify push
-amplify add hosting
-amplify publish
 ```
 
 ## Configure
