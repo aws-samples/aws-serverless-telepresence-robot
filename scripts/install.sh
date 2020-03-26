@@ -51,6 +51,7 @@ else
 fi
 
 git checkout aa9628d189719e6fe2f709347c5a62d93a3ff98d
+git submodule update --recursive
 cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/samples
 rm /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/samples/Common.c
 curl --silent 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/modified-common.c' --output Common.c

@@ -40,6 +40,7 @@ def runKinesisVideoStream():
     environmentVars  = 'IOT_GET_CREDENTIAL_ENDPOINT=' + config['IOT_GET_CREDENTIAL_ENDPOINT']
     environmentVars += ' ROLE_ALIAS=' + config['ROLE_ALIAS']
     environmentVars += ' AWS_DEFAULT_REGION=' + config['AWS_DEFAULT_REGION']
+    environmentVars += ' DEFAULT_KVS_CACERT_PATH=' + rootCAPath
 
     command = environmentVars + ' ./kvsWebrtcClientMasterGstSample ' + clientId + ' /'
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
