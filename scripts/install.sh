@@ -18,7 +18,7 @@ sudo apt-get -y upgrade
 
 sudo apt-get -y install curl
 sudo apt-get -y install python3
-sudo apt-get -y install g++ gcc cmake make
+sudo apt-get -y install git g++ gcc cmake make
 sudo apt-get -y install libssl-dev libcurl4-openssl-dev liblog4cplus-1.1-9 liblog4cplus-dev
 sudo apt-get -y install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 sudo apt-get -y install gstreamer1.0-plugins-base-apps gstreamer1.0-plugins-bad
