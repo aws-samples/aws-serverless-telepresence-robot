@@ -82,7 +82,7 @@ else
   git pull
 fi
 
-git checkout 841bdbc8cbcdc05d2ed300ef3c1bfdfd4fa4ec26
+git checkout 389703f1f46ce71ab0a77bf9a061feb4a44e9636
 git submodule update --recursive
 cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/samples
 rm /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/samples/Common.c
