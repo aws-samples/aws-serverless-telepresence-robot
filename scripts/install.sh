@@ -42,27 +42,6 @@ else
   cd /home/pi/Projects
 fi
 
-if [ ! -d /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c ]
-then
-  git clone --recursive https://github.com/awslabs/amazon-kinesis-video-streams-webrtc-sdk-c.git
-  cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c
-else
-  cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c
-  git pull
-fi
-
-git checkout aa9628d189719e6fe2f709347c5a62d93a3ff98d
-git submodule update --recursive
-cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/samples
-rm /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/samples/Common.c
-curl --silent 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/modified-common.c' --output Common.c
-
-cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c
-mkdir build
-cd build
-cmake ..
-make
-
 if [ ! -d /home/pi/Projects/robot ]
 then
   mkdir /home/pi/Projects/robot
@@ -70,8 +49,6 @@ then
 else
   cd /home/pi/Projects/robot
 fi
-
-cp /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/build/kvsWebrtcClientMasterGstSample /home/pi/Projects/robot/
 
 if [ "$MOTOR_DRIVER" == "adafruit" ]
 then
@@ -95,3 +72,27 @@ cd /home/pi/Projects/robot/certs
 curl --silent 'https://www.amazontrust.com/repository/SFSRootCAG2.pem' --output cacert.pem
 touch certificate.pem
 touch private.pem.key
+
+if [ ! -d /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c ]
+then
+  git clone --recursive https://github.com/awslabs/amazon-kinesis-video-streams-webrtc-sdk-c.git
+  cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c
+else
+  cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c
+  git pull
+fi
+
+git checkout 841bdbc8cbcdc05d2ed300ef3c1bfdfd4fa4ec26
+git submodule update --recursive
+cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/samples
+rm /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/samples/Common.c
+curl --silent 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/modified-common.c' --output Common.c
+
+cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c
+mkdir build
+cd build
+cmake ..
+make
+
+cp /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/build/kvsWebrtcClientMasterGstSample /home/pi/Projects/robot/
+
