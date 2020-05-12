@@ -76,7 +76,9 @@ touch private.pem.key
 if [ "$USE_PREBUILT" == True ]
 then
   cd /home/pi/Projects/robot/
-  wget 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/kvsWebrtcClientMasterGstSample'
+  wget 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/webrtc_build/kvsWebrtcClientMasterGstSample'
+  wget 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/webrtc_build/libkvsWebrtcClient.so'
+  wget 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/webrtc_build/libkvsWebrtcSignalingClient.so'
   sudo chmod +x kvsWebrtcClientMasterGstSample
 else
   if [ ! -d /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c ]
@@ -97,7 +99,7 @@ else
   cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c
   mkdir build
   cd build
-  cmake ..
+  cmake -DBUILD_STATIC_LIBS=TRUE ..
   make
 
   cp /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/build/kvsWebrtcClientMasterGstSample /home/pi/Projects/robot/
