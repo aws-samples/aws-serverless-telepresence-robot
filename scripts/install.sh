@@ -101,7 +101,6 @@ else
   cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c
   mkdir build
   cd build
-  cmake -DBUILD_STATIC_LIBS=TRUE ..
   make
 
   cp /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/build/kvsWebrtcClientMasterGstSample /home/pi/Projects/robot/
