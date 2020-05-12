@@ -73,8 +73,12 @@ curl --silent 'https://www.amazontrust.com/repository/SFSRootCAG2.pem' --output 
 touch certificate.pem
 touch private.pem.key
 
-if [ "$BUILD_KINESIS" == True ]
+if [ "$USE_PREBUILT" == True ]
 then
+  cd /home/pi/Projects/robot/
+  wget 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/kvsWebrtcClientMasterGstSample'
+  sudo chmod +x kvsWebrtcClientMasterGstSample
+else
   if [ ! -d /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c ]
   then
     git clone --recursive https://github.com/awslabs/amazon-kinesis-video-streams-webrtc-sdk-c.git
@@ -97,8 +101,4 @@ then
   make
 
   cp /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/build/kvsWebrtcClientMasterGstSample /home/pi/Projects/robot/
-else
-  cd /home/pi/Projects/robot/
-  wget 'https://raw.githubusercontent.com/aws-samples/aws-serverless-telepresence-robot/master/scripts/kvsWebrtcClientMasterGstSample'
-  sudo chmod +x kvsWebrtcClientMasterGstSample
 fi
