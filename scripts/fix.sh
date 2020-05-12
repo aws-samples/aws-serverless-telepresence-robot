@@ -12,7 +12,7 @@ curl --silent 'https://raw.githubusercontent.com/aws-samples/aws-serverless-tele
 cd /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c
 mkdir build
 cd build
-cmake ..
+cmake .. -DBUILD_OPENSSL=TRUE
 make
 
 cp /home/pi/Projects/amazon-kinesis-video-streams-webrtc-sdk-c/build/kvsWebrtcClientMasterGstSample /home/pi/Projects/robot/
