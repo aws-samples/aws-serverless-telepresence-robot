@@ -73,6 +73,8 @@ curl --silent 'https://www.amazontrust.com/repository/SFSRootCAG2.pem' --output 
 touch certificate.pem
 touch private.pem.key
 
+cd /home/pi/Projects
+
 if [ "$USE_PREBUILT" == True ]
 then
   cd /home/pi/Projects/robot/
