@@ -4,6 +4,10 @@
 
 This project contains all the files neccesary to deploy a serverless telepresence robot application using the Pimoroni STS-Pi kit. It will provision all the resources required for permisions and credentials, a kinesis video stream, and also deploy a REST api for driving a robot. A Python script is also included for driving the robot.
 
+The full instructions are published as a two part blog.
+https://aws.amazon.com/blogs/compute/building-a-raspberry-pi-telepresence-robot-using-serverless-part-1/
+https://aws.amazon.com/blogs/compute/building-a-raspberry-pi-telepresence-robot-using-serverless-part-2/
+
 ```bash
 .
 ├── README.MD                  <-- This instructions file
